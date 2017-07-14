@@ -1,8 +1,16 @@
+# BADLY NEEDS ERROR HANDLING FOR CASES WHERE SOMETHING MIGHT NOT BE RETURNED.
+
 import os
 from requests import get as g
 from requests import options
 import json
 from html2text import html2text
+
+def get_chain(source, alternatives):
+    for a in alternatives:
+        if a in source and source[a]:
+            return source[a]
+    return None
 
 def pretty_dict(some_dictionary):
     return json.dumps(some_dictionary, sort_keys=True, indent=4)
@@ -20,33 +28,47 @@ def safe_merge(d1, d2):
     return result
 
 class Opinion(object):
-    def __init__(self, api_data):
-        if api_data["html"]:
-            self.html=api_data["html"]
-        elif api_data["html_columbia"]:
-            self.html=api_data["html_columbia"]
-        elif api_data["html_lawbox"]:
-            self.html=api_data["html_lawbox"]
+    def __init__(self, api_data, name):
+        self.case_name = name
+        self.html = get_chain(api_data, ["html", "html_columbia", "html_lawbox", "html_with_citations"])
+        self.text = api_data.get("plain_text")
+        if self.html:
+            self.markdown=html2text(self.html)
         else:
-            self.html=api_data["html_with_citations"] #doesn't handle case with no html at all yet.
-        if api_data["plain_text"]:
-            self.text=api_data["plain_text"]
-        self.markdown=html2text(self.html)
+            self.markdown = ""
+
+    def __repr__(self):
+        return "<lawpy Opinion (poss. one of several), " + self.case_name + ">"
+
+    def __str__(self):
+        return json.dumps(self.__dict__, sort_keys=True, indent=4)
 
 
 class Case(object):
     def __init__(self, api_data):
-        self.name=api_data["case_name"]
-        self.citations=api_data["citation"]
-        self.court=api_data["court"]
-        self.opinions = [Opinion(op) for op in api_data["opinions"]]
+        self.name = get_chain(api_data, ["case_name", "case_name_full", "caseName"])
+        self.citation_count = get_chain(api_data, ["citation_count", "citeCount"])
+        self.citations = api_data["citation"]
+        self.court = get_chain(api_data, ["court", "court_exact", "court_id", "court_citation_string"])
+        self.opinions = [Opinion(op, self.name) for op in api_data["opinions"]]
         self.opinion_shape = {0: None, 1: "singleton"}.get(len(self.opinions), "list")
-        self.date = api_data["date_filed"]
+        self.date = get_chain(api_data, ["date_filed", "dateFiled"])
         self.people = {
             "panel": api_data["panel"],
             "non_participating_judges": api_data["non_participating_judges"],
-            'judges': api_data["judges"]
+            'judges': get_chain(api_data, ["judges", "judge"]),
+            "attorneys": get_chain(api_data, ["attorneys", "attorney"])
         }
+        self.courtlistener_cluster = api_data.get("cluster_id")
+        self.courtlistener_docket = api_data.get("docket")
+
+    def __repr__(self):
+        return "<lawpy Case, " + self.name + ">"
+
+    def __str__(self):
+        basics = {key: val for key, val in self.__dict__.items() if key != "opinions"}
+        basics.update({"opinions": [x.__dict__ for x in self.opinions]})
+        return json.dumps(basics, sort_keys=True, indent=4)
 
 
 
@@ -100,3 +122,5 @@ class session(object):
 
 
 # need to add more data in case and opinion objects.  also for stuff that might return either a singleton or a list I should just have getter functions that either map over the list or just dispatch for a single, so that it's easy to get results and reports.
+
+# need to provide a facility to dump all cases straight to JSON
