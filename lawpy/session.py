@@ -7,7 +7,17 @@ from html2text import html2text
 def pretty_dict(some_dictionary):
     return json.dumps(some_dictionary, sort_keys=True, indent=4)
 
-
+def safe_merge(d1, d2):
+    keys = set(d1.keys()).union(set(d2.keys()))
+    result = {}
+    for k in keys:
+        if k in d2 and d2[k]:
+            result.update({k: d2[k]})
+        elif k in d1 and d1[k]:
+            result.update({k: d1[k]})
+        else:
+            result.update({k: None})
+    return result
 
 class Opinion(object):
     def __init__(self, api_data):
@@ -26,11 +36,17 @@ class Opinion(object):
 
 class Case(object):
     def __init__(self, api_data):
-        self.url = "https://www.courtlistener.com" + api_data["absolute_url"]
         self.name=api_data["case_name"]
         self.citations=api_data["citation"]
         self.court=api_data["court"]
         self.opinions = [Opinion(op) for op in api_data["opinions"]]
+        self.opinion_shape = {0: None, 1: "singleton"}.get(len(self.opinions), "list")
+        self.date = api_data["date_filed"]
+        self.people = {
+            "panel": api_data["panel"],
+            "non_participating_judges": api_data["non_participating_judges"],
+            'judges': api_data["judges"]
+        }
 
 
 
@@ -69,16 +85,16 @@ class session(object):
         searchres = self.request("search/", parameters={'citation': cite})
         cases = []
         for res in searchres["results"]:
-            print(res)
             bigdict = {}
-            print(bigdict)
-            bigdict.update(res)
+            bigdict = safe_merge(bigdict, res)
             cluster = self.request("clusters/" + str(res["cluster_id"]))
-            bigdict.update(cluster)
+            bigdict = safe_merge(bigdict, cluster)
+            docket = self.raw_url_request(cluster["docket"])
+            bigdict = safe_merge(bigdict, docket)
             opinion_results = []
             for op in cluster["sub_opinions"]:
                 opinion_results.append(self.raw_url_request(op))
-            bigdict.update({"opinions": opinion_results})
+            bigdict = safe_merge(bigdict, {"opinions": opinion_results})
             cases.append(bigdict)
         return [Case(x) for x in cases]
 
