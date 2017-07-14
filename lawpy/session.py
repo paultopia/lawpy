@@ -2,9 +2,37 @@ import os
 from requests import get as g
 from requests import options
 import json
+from html2text import html2text
 
 def pretty_dict(some_dictionary):
     return json.dumps(some_dictionary, sort_keys=True, indent=4)
+
+
+
+class Opinion(object):
+    def __init__(self, api_data):
+        if api_data["html"]:
+            self.html=api_data["html"]
+        elif api_data["html_columbia"]:
+            self.html=api_data["html_columbia"]
+        elif api_data["html_lawbox"]:
+            self.html=api_data["html_lawbox"]
+        else:
+            self.html=api_data["html_with_citations"] #doesn't handle case with no html at all yet.
+        if api_data["plain_text"]:
+            self.text=api_data["plain_text"]
+        self.markdown=html2text(self.html)
+
+
+class Case(object):
+    def __init__(self, api_data):
+        self.url = "https://www.courtlistener.com" + api_data["absolute_url"]
+        self.name=api_data["case_name"]
+        self.citations=api_data["citation"]
+        self.court=api_data["court"]
+        self.opinions = [Opinion(op) for op in api_data["opinions"]]
+
+
 
 class session(object):
     def __init__(self, api_key="ENV"):
@@ -52,14 +80,7 @@ class session(object):
                 opinion_results.append(self.raw_url_request(op))
             bigdict.update({"opinions": opinion_results})
             cases.append(bigdict)
-        return cases
+        return [Case(x) for x in cases]
 
 
-# result.json just parses a json and gives a dict, it's amazing. 
-
-# search -> cluster -> opinion
-
-# search endpoint gives me a list of results under the results key. Each result hopefully will have a cluster_id. Then I can loop over the clusterIDs and clusters will have a list of sub_opinions.
-
-#class Case(object):
-#    def __init__(self, )
+# need to add more data in case and opinion objects.  also for stuff that might return either a singleton or a list I should just have getter functions that either map over the list or just dispatch for a single, so that it's easy to get results and reports.

@@ -23,7 +23,8 @@ setup(name='lawpy',
       license='MIT',
       packages=['lawpy'],
       install_requires=[
-          'requests'
+          'requests',
+          'html2text'
       ],
       python_requires='>=3',
       zip_safe=False)
