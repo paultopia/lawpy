@@ -1,8 +1,7 @@
 # BADLY NEEDS ERROR HANDLING FOR CASES WHERE SOMETHING MIGHT NOT BE RETURNED.
 
 import os
-from requests import get as g
-from requests import options
+import requests
 import json
 from html2text import html2text
 
@@ -85,23 +84,30 @@ class session(object):
         else:
             self.api_key = api_key
         self.auth_header = {'Authorization': 'Token ' + self.api_key}
+        self.total_requests_this_session = 0
 
     def get_key(self):
         return self.api_key
 
     def request(self, endpoint="", headers={}, parameters=None):
-        url = "https://www.courtlistener.com/api/rest/v3/" + endpoint
-        h = headers.update(self.auth_header)
-        return g(url, headers=h, params=parameters).json()
-
-    def raw_url_request(self, endpoint, headers={}, parameters=None):
-        h = headers.update(self.auth_header)
-        return g(endpoint, headers=h, params=parameters).json()
+        if endpoint.startswith("https://"):
+            ep = endpoint
+        else:
+            ep = "https://www.courtlistener.com/api/rest/v3/" + endpoint
+        h = {}
+        h = safe_merge(h, headers)
+        h = safe_merge(h, self.auth_header)
+        result = requests.get(ep, headers=h, params=parameters)
+        self.total_requests_this_session += 1
+        result.raise_for_status()
+        return result.json()
 
     def options(self, endpoint="", headers={}):
-        url = "https://www.courtlistener.com/api/rest/v3/" + endpoint
-        h = headers.update(self.auth_header)
-        return options(url, headers=h).json()
+        ep = "https://www.courtlistener.com/api/rest/v3/" + endpoint
+        h = {}
+        h = safe_merge(h, headers)
+        h = safe_merge(h, self.auth_header)
+        return requests.options(ep, headers=h).json()
 
     def find_cite(self, cite):
         return self.request("search/", parameters={'citation': cite})
@@ -113,11 +119,11 @@ class session(object):
             bigdict = safe_merge(bigdict, res)
             cluster = self.request("clusters/" + str(res["cluster_id"]))
             bigdict = safe_merge(bigdict, cluster)
-            docket = self.raw_url_request(cluster["docket"])
+            docket = self.request(cluster["docket"])
             bigdict = safe_merge(bigdict, docket)
             opinion_results = []
             for op in cluster["sub_opinions"]:
-                opinion_results.append(self.raw_url_request(op))
+                opinion_results.append(self.request(op))
             bigdict = safe_merge(bigdict, {"opinions": opinion_results})
             cases.append(bigdict)
         return [Case(x) for x in cases]
@@ -128,9 +134,13 @@ class session(object):
         while True:
             reslist = reslist + current["results"]
             if current["next"]:
-                current = self.raw_url_request(current["next"])
+                print(current["next"])
+                current = self.request(current["next"])
             else:
-                return self.extract_case_searches(reslist)
+                print("done")
+                break
+        print("out of loop")
+        return self.extract_case_searches(reslist)
 
     def fetch_cases_by_cite(self, cite):
         return self.search({'citation': cite})
