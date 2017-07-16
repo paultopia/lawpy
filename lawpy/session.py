@@ -128,18 +128,17 @@ class session(object):
             cases.append(bigdict)
         return [Case(x) for x in cases]
 
-    def search(self, search_header):
+    def search(self, search_header, noisy=False):
         current = self.request("search/", parameters=search_header)
         reslist = []
         while True:
             reslist = reslist + current["results"]
             if current["next"]:
-                print(current["next"])
+                if noisy:
+                    print("requesting: " + current["next"])
                 current = self.request(current["next"])
             else:
-                print("done")
                 break
-        print("out of loop")
         return self.extract_case_searches(reslist)
 
     def fetch_cases_by_cite(self, cite):
