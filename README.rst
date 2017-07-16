@@ -51,7 +51,7 @@ Similarly, if you have a list of cases, the easiest and most strightforward way 
 
 ``someopinion.html`` is a html representation of the opinion text.
 
-``someopinion.text`` is a plaintext representation of the opinion text.
+``someopinion.text`` is a plaintext representation of the opinion text. (Often does not exist.)
 
 ``someopinion.markdown`` is a markdown representation of the opinion text.
 

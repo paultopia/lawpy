@@ -48,14 +48,17 @@ class Case(object):
     def __init__(self, api_data):
         self.name = get_chain(api_data, ["case_name", "case_name_full", "caseName"])
         self.citation_count = get_chain(api_data, ["citation_count", "citeCount"])
-        self.citations = api_data["citation"]
+        self.citations = api_data.get("citation")
         self.court = get_chain(api_data, ["court", "court_exact", "court_id", "court_citation_string"])
-        self.opinions = [Opinion(op, self.name) for op in api_data["opinions"]]
+        if "opinions" in api_data and api_data["opinions"]:
+            self.opinions = [Opinion(op, self.name) for op in api_data["opinions"]]
+        else:
+            self.opinions = []
         self.opinion_shape = {0: None, 1: "singleton"}.get(len(self.opinions), "list")
         self.date = get_chain(api_data, ["date_filed", "dateFiled"])
         self.people = {
-            "panel": api_data["panel"],
-            "non_participating_judges": api_data["non_participating_judges"],
+            "panel": api_data.get("panel"),
+            "non_participating_judges": api_data.get("non_participating_judges"),
             'judges': get_chain(api_data, ["judges", "judge"]),
             "attorneys": get_chain(api_data, ["attorneys", "attorney"])
         }
@@ -103,10 +106,9 @@ class session(object):
     def find_cite(self, cite):
         return self.request("search/", parameters={'citation': cite})
 
-    def fetch_cases_by_cite(self, cite):
-        searchres = self.request("search/", parameters={'citation': cite})
+    def extract_case_searches(self, searchres):
         cases = []
-        for res in searchres["results"]:
+        for res in searchres:
             bigdict = {}
             bigdict = safe_merge(bigdict, res)
             cluster = self.request("clusters/" + str(res["cluster_id"]))
@@ -120,7 +122,24 @@ class session(object):
             cases.append(bigdict)
         return [Case(x) for x in cases]
 
+    def search(self, search_header):
+        current = self.request("search/", parameters=search_header)
+        reslist = []
+        while True:
+            reslist = reslist + current["results"]
+            if current["next"]:
+                current = self.raw_url_request(current["next"])
+            else:
+                return self.extract_case_searches(reslist)
+
+    def fetch_cases_by_cite(self, cite):
+        return self.search({'citation': cite})
+
+    def fetch_cases_by_judge(self, judge):
+        return self.search({'judge': judge})
 
 # need to add more data in case and opinion objects.  also for stuff that might return either a singleton or a list I should just have getter functions that either map over the list or just dispatch for a single, so that it's easy to get results and reports.
 
 # need to provide a facility to dump all cases straight to JSON
+
+# also should store search strings for future record-keeping use?
