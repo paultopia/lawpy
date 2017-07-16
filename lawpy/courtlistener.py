@@ -4,27 +4,7 @@ import os
 import requests
 import json
 from html2text import html2text
-
-def get_chain(source, alternatives):
-    for a in alternatives:
-        if a in source and source[a]:
-            return source[a]
-    return None
-
-def pretty_dict(some_dictionary):
-    return json.dumps(some_dictionary, sort_keys=True, indent=4)
-
-def safe_merge(d1, d2):
-    keys = set(d1.keys()).union(set(d2.keys()))
-    result = {}
-    for k in keys:
-        if k in d2 and d2[k]:
-            result.update({k: d2[k]})
-        elif k in d1 and d1[k]:
-            result.update({k: d1[k]})
-        else:
-            result.update({k: None})
-    return result
+from .utils import *
 
 class Opinion(object):
     def __init__(self, api_data, name):
@@ -74,7 +54,7 @@ class Case(object):
 
 
 
-class session(object):
+class courtlistener(object):
     def __init__(self, api_key="ENV"):
         if api_key == "ENV":
             try:

@@ -6,7 +6,7 @@ def readme():
 
 setup(name='lawpy',
       version='0.1',
-      description='Pythonic interface to courtlistener.com api',
+      description='Pythonic interface to legal and political APIs, including courtlistener, propublica, opensecrets, others',
       long_description=readme(),
       url='https://github.com/paultopia/lawpy',
       classifiers=[
@@ -17,7 +17,7 @@ setup(name='lawpy',
           "License :: OSI Approved :: MIT License",
           "Programming Language :: Python :: 3 :: Only"
       ],
-      keywords="law, courtlistener, cases, court",
+      keywords="law, courtlistener, cases, court, congress, politics, propublica, opensecrets, campaignfinance",
       author='Paul Gowder',
       author_email='paul.gowder@gmail.com',
       license='MIT',

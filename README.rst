@@ -1,12 +1,26 @@
-pythonic interface to version 3 of the courtlistener.com api (as of 7/13/17) --- for legal data crunching on cases, it's nice to have cases.
+**Lawpy: Legal and Political Data**
 
-requires python 3.x.  Tested on OSX, should work on any unix-like, no clue whether it'll work on windows.
+Pythonic interface to legal and political data APIs.  Includes: courtlistener.com (U.S. legal cases), propublica (U.S. Congress, votes, bills), opensecrets (U.S. campaign finance data) [OTHERS?]
 
-requires courtlistener.com api key, which can be gotten for free when you register on `courtlistener.com <https://www.courtlistener.com/register/>`_. 
+Requires python 3.x.  Tested on OSX, should work on any unix-like, no clue whether it'll work on windows.
+
+
+[CHANGING: need to rewrite. session is now courtlistener, because I've decided to include a bunch of other APIS as well, courtlistener, propublica, eu law, canadian law]
+
+[add fec api! https://api.open.fec.gov/developers/ and other us gov: https://api.data.gov/docs/ ]
+
+**APIs Included**
+
+Courtlistener.com.  Requires courtlistener.com api key, which can be gotten for free when you register on `courtlistener.com <https://www.courtlistener.com/register/>`_.  You may pass it to the courtlistener constructor, or (if not passed) lawpy will look for an api key in an environment variable called COURTLISTENER.
+
+Uses version 3 of the courtlistener.com api (as of 7/13/17).
+
+Example: ``import lawpy; sess = lawpy.courtlistener(); brown = sess.fetch_cases_by_cite("347 U.S. 483") + sess.fetch_cases_by_cite("349 U.S. 294")``
+
 
 **Usage** 
 
-Initialize a connection object: ``conn = lawpy.session(api_key)``. By default, lawpy will look for an api key in an environment variable called COURTLISTENER, but you can also pass it explicitly to the session.
+Initialize a connection object: ``conn = lawpy.courtlistener(api_key)``. By default, 
 
 You must initialize a connection before you can do anything else.
 
