@@ -1,10 +1,7 @@
-# BADLY NEEDS ERROR HANDLING FOR CASES WHERE SOMETHING MIGHT NOT BE RETURNED.
-
-import os
 import requests
 import json
 from html2text import html2text
-from .utils import *
+from .utils import session_builder, request_builder, get_chain, pretty_dict, safe_merge
 
 class Opinion(object):
     def __init__(self, api_data, name):
@@ -55,32 +52,11 @@ class Case(object):
 
 
 class courtlistener(object):
-    def __init__(self, api_key="ENV"):
-        if api_key == "ENV":
-            try:
-                self.api_key = os.environ['COURTLISTENER']
-            except KeyError as e:
-                raise Exception("API key is missing. Please set the COURTLISTENER environment variable or pass the key to the session constructor. You can get an API key directly from courtlistner.com by registering on their website.") from e
-        else:
-            self.api_key = api_key
-        self.auth_header = {'Authorization': 'Token ' + self.api_key}
-        self.total_requests_this_session = 0
-
-    def get_key(self):
-        return self.api_key
+    def __init__(self):
+        session_builder(self, "COURTLISTENER")(self)
 
     def request(self, endpoint="", headers={}, parameters=None):
-        if endpoint.startswith("https://"):
-            ep = endpoint
-        else:
-            ep = "https://www.courtlistener.com/api/rest/v3/" + endpoint
-        h = {}
-        h = safe_merge(h, headers)
-        h = safe_merge(h, self.auth_header)
-        result = requests.get(ep, headers=h, params=parameters)
-        self.total_requests_this_session += 1
-        result.raise_for_status()
-        return result.json()
+        return request_builder(self, "https://www.courtlistener.com/api/rest/v3/")(self, endpoint, headers, parameters)
 
     def options(self, endpoint="", headers={}):
         ep = "https://www.courtlistener.com/api/rest/v3/" + endpoint
