@@ -9,6 +9,19 @@ Requires python 3.x.  Tested on OSX, should work on any unix-like, no clue wheth
 
 [add fec api! https://api.open.fec.gov/developers/ and other us gov: https://api.data.gov/docs/ ]
 
+master list of APIs to wrap:
+
+courtlistener (in progress) env=COURTLISTENER
+
+propublica (in progress) env=PROPUBLICA
+
+opensecrets (have api key, not yet started) env=OPENSECRETS
+
+api.data.gov (have api key, not yet started) env=DATAGOV
+
+openstates.org (have api key, not yet started) env=OPENSTATES
+
+
 **APIs Included**
 
 Courtlistener.com.  Requires courtlistener.com api key, which can be gotten for free when you register on `courtlistener.com <https://www.courtlistener.com/register/>`_.  You may pass it to the courtlistener constructor, or (if not passed) lawpy will look for an api key in an environment variable called COURTLISTENER.
