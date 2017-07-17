@@ -34,7 +34,6 @@ def request_builder(auth_header, baseurl):
         h = safe_merge(h, auth_header)
         result = requests.get(ep, headers=h, params=parameters)
         result.raise_for_status()
-        print("USING THE NEW CODE")
         return result.json()
     return request
 
