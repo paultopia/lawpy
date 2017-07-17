@@ -1,12 +1,9 @@
-from .utils import session_builder, request_builder
+from .utils import session_builder
 
 class propublica(object):
 
     def __init__(self):
-        session_builder(self, "PROPUBLICA")(self)
-
-    def request(self, endpoint="", headers={}, parameters=None):
-        return request_builder(self, "https://api.propublica.org/congress/v1/")(self, endpoint, headers, parameters)
+        session_builder(self, "PROPUBLICA", "https://api.propublica.org/congress/v1/", 'X-API-Key')(self)
 
     def bill_info_by_stub(self, congress, bill):
         ep = str(congress) + "/bills/" + bill + ".json"

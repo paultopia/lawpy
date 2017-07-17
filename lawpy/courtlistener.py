@@ -1,7 +1,7 @@
 import requests
 import json
 from html2text import html2text
-from .utils import session_builder, request_builder, get_chain, pretty_dict, safe_merge
+from .utils import session_builder, get_chain, pretty_dict, safe_merge
 
 class Opinion(object):
     def __init__(self, api_data, name):
@@ -53,10 +53,7 @@ class Case(object):
 
 class courtlistener(object):
     def __init__(self):
-        session_builder(self, "COURTLISTENER")(self)
-
-    def request(self, endpoint="", headers={}, parameters=None):
-        return request_builder(self, "https://www.courtlistener.com/api/rest/v3/")(self, endpoint, headers, parameters)
+        session_builder(self, "COURTLISTENER", "https://www.courtlistener.com/api/rest/v3/", 'Authorization', 'Token ')(self)
 
     def options(self, endpoint="", headers={}):
         ep = "https://www.courtlistener.com/api/rest/v3/" + endpoint
