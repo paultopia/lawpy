@@ -1,11 +1,10 @@
 **Lawpy: Legal and Political Data**
 
-Pythonic interface to legal and political data APIs.  Includes: courtlistener.com (U.S. legal cases), propublica (U.S. Congress, votes, bills), opensecrets (U.S. campaign finance data) [OTHERS?]
+Pythonic interface to (U.S.) legal and political data APIs.  Includes: courtlistener.com (U.S. legal cases), propublica (U.S. Congress, votes, bills), and openstates (U.S. state legislators, bills). 
 
 Requires python 3.x.  Tested on OSX, should work on any unix-like, no clue whether it'll work on windows.
 
 
-[CHANGING: need to rewrite. session is now courtlistener, because I've decided to include a bunch of other APIS as well, courtlistener, propublica, eu law, canadian law]
 
 [add fec api! https://api.open.fec.gov/developers/ and other us gov: https://api.data.gov/docs/ ]
 
@@ -15,7 +14,6 @@ courtlistener (in progress) env=COURTLISTENER
 
 propublica (in progress) env=PROPUBLICA
 
-
 api.data.gov (have api key, not yet started) env=DATAGOV
 
 openstates.org (have api key, not yet started) env=OPENSTATES
@@ -23,28 +21,44 @@ openstates.org (have api key, not yet started) env=OPENSTATES
 
 Does not include opensecrets, their api is sufficiently nonstandard that it would require a big refactor to get it working, but check our their python wrapper at: https://github.com/opensecrets/python-crpapi 
 
-**APIs Included**
+**GENERAL USAGE**
 
-Courtlistener.com.  Requires courtlistener.com api key, which can be gotten for free when you register on `courtlistener.com <https://www.courtlistener.com/register/>`_.  You may pass it to the courtlistener constructor, or (if not passed) lawpy will look for an api key in an environment variable called COURTLISTENER.
+For each of the APIs covered, you'll need to get an API token from the provider.  Then you can either set that in an environment variable on your system (see below for the correct names), or pass to a constructor function.
+
+Each API has its own constructor function, which is used to initialize a session at that provider.  Access to the APIs is then provided by a series of custom methods on that constructor function.  For example::
+
+  import lawpy
+
+  sess = lawpy.courtlistener()
+
+  brown_v_board=sess.fetch_cases_by_cite("347 U.S. 483")
+
+The specific methods and data structures returned are documented below.
+
+There is also a ``to_pandas()`` global function that takes a list of objects (which must be of the same time) and returns a Pandas DataFrame containing all the contents of that list (TODO).
+
+Generally, this library is designed for two workflows:
+
+1.  Discrete data fetching: if you want a case, or a summary of a bill, or something, then you can stick around in lawpy data structures, which provide convenience methods for pretty-printing and reading, fetching associated information, etc. (TODO).
+
+2.  Data analysis on large batches of documents: you can run searches producing a chunk of case, legislative, etc. data and then bail out directly to Pandas; from there, you're on your own wrt things like bringing together data from disparate sources, etc. 
+
+**INDIVIDUAL API DOCUMENTATION**
+
+**Courtlistener**
+
+Provides legal cases.  They also have other data, like data about individual judges, who appointed them, etc., but I consider that low-priority, and so have not implemented a robust set of methods to search that.  Pull requests welcome. 
+
+To get an API token, register on `courtlistener.com <https://www.courtlistener.com/register/>`_.  You may pass it to the courtlistener constructor, or (if not passed) lawpy will look for an api key in an environment variable called COURTLISTENER.
 
 Uses version 3 of the courtlistener.com api (as of 7/13/17).
 
-Example: ``import lawpy; sess = lawpy.courtlistener(); brown = sess.fetch_cases_by_cite("347 U.S. 483") + sess.fetch_cases_by_cite("349 U.S. 294")``
-
-
-**Usage** 
-
-Initialize a connection object: ``conn = lawpy.courtlistener(api_key)``. By default, 
-
-You must initialize a connection before you can do anything else.
-
-**Affordances**
+In the below, we assume that conn is a connection initialized with the courtlistener constructor. 
 
 1. Fetch a case(s) by citation: ``mycases = conn.fetch_cases_by_cite(citation)``.  Takes a single citation, e.g., "373 U.S. 668", and returns all cases matching that citation. ``mycases`` will be a *list* of ``Case`` objects (which may be empty, or may contain just one case... actually, it should usually just contain one case, but it's always alist in any event), see below for the properties and methods of that object.
 
 
-
-**the Case object**
+*the Case object*
 
 if ``somecase`` is an instance of ``Case``:
 
@@ -71,9 +85,7 @@ if ``somecase`` is an instance of ``Case``:
 Similarly, if you have a list of cases, the easiest and most strightforward way to get raw json data out of them is ``rawdata = [json.loads(str(case)) for case in mycases]``. 
 
 
-**The Opinion Object**
-
-*Key Properties*
+*The Opinion Object*
 
 ``someopinion.case_name`` is the name of the case associated with the opinion (if there are multiple opinions associated with a case, this property will be non-unique).
 
@@ -86,5 +98,10 @@ Similarly, if you have a list of cases, the easiest and most strightforward way 
 
 Not all properties are guaranteed to be present or in the same format for every case or opinion.  There are some redundancies and inconsistencies in the courtlistener API, as well as data gaps, and I've done my best to smooth over those as much as possible. In general, where there is a more informative/useful version of some property and a less informative/useful version, this library looks for the most useful version, and, if that isn't present, takes the less useful version; if neither is present it just fills the slot with ``None``. 
 
+**Propublica**
 
-(note to self: need to add an examples directory).
+**Openstates**
+
+Environment variable: OPENSTATES.  `Get an API key from their site <https://openstates.org/api/register/>`.
+
+1. Get legislators by state. ``conn.legislators_by_state(state, options=None)``.
