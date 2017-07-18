@@ -23,21 +23,27 @@ def safe_merge(d1, d2):
             result.update({k: None})
     return result
 
-def request_builder(auth_header, baseurl):
-    def request(endpoint="", headers={}, parameters=None):
+def request_builder(auth_header, baseurl, baseparams, apikey_in_params):
+    def request(endpoint="", headers={}, parameters=baseparams):
         if endpoint.startswith("https://"):
             ep = endpoint
         else:
             ep = baseurl + endpoint
         h = {}
         h = safe_merge(h, headers)
+        if apikey_in_params:
+            p = {}
+            p = safe_merge(p, parameters)
+            p = safe_merge(p, auth_header)
+        else:
+            p = parameters
         h = safe_merge(h, auth_header)
-        result = requests.get(ep, headers=h, params=parameters)
+        result = requests.get(ep, headers=h, params=p)
         result.raise_for_status()
         return result.json()
     return request
 
-def session_builder(selfvar, keyenv, baseurl, keyheader, key_prefix=""):
+def session_builder(selfvar, keyenv, baseurl, keyheader, key_prefix="", baseparams={}, apikey_in_params=False):
     def class_init(selfvar, api_key="ENV"):
         if api_key == "ENV":
             try:
@@ -47,6 +53,6 @@ def session_builder(selfvar, keyenv, baseurl, keyheader, key_prefix=""):
         else:
             selfvar.api_key = api_key
         auth_header = {keyheader: key_prefix + selfvar.api_key}
-        selfvar.request = request_builder(auth_header, baseurl)
+        selfvar.request = request_builder(auth_header, baseurl, baseparams, apikey_in_params)
     return class_init
 

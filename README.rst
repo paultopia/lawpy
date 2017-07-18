@@ -15,12 +15,13 @@ courtlistener (in progress) env=COURTLISTENER
 
 propublica (in progress) env=PROPUBLICA
 
-opensecrets (have api key, not yet started) env=OPENSECRETS
 
 api.data.gov (have api key, not yet started) env=DATAGOV
 
 openstates.org (have api key, not yet started) env=OPENSTATES
 
+
+Does not include opensecrets, their api is sufficiently nonstandard that it would require a big refactor to get it working, but check our their python wrapper at: https://github.com/opensecrets/python-crpapi 
 
 **APIs Included**
 
