@@ -1,6 +1,6 @@
-**Lawpy: Legal and Political Data**
+**Lawpy: Get You Some Legal Data**
 
-Pythonic interface to (U.S.) legal and political data APIs.  Includes: courtlistener.com (U.S. legal cases), propublica (U.S. Congress, votes, bills), and openstates (U.S. state legislators, bills). 
+Pythonic interface to (U.S.) legal data APIs.  Includes: courtlistener.com (U.S. legal cases), propublica (U.S. Congress, votes, bills), and openstates (U.S. state legislators, bills). 
 
 Requires python 3.x.  Tested on OSX, should work on any unix-like, no clue whether it'll work on windows.
 
@@ -42,6 +42,12 @@ Generally, this library is designed for two workflows:
 1.  Discrete data fetching: if you want a case, or a summary of a bill, or something, then you can stick around in lawpy data structures, which provide convenience methods for pretty-printing and reading, fetching associated information, etc. (TODO).
 
 2.  Data analysis on large batches of documents: you can run searches producing a chunk of case, legislative, etc. data and then bail out directly to Pandas; from there, you're on your own wrt things like bringing together data from disparate sources, etc. 
+
+**Contributing**
+
+Adding more methods to get different, useful, kinds of data, or more entire legal APIs, is highly encouraged.  I'm also totally open to PRs refactoring some of my craziness, or to adding compatibility with Python 2.
+
+There are (woefully incomplete) tests, but you need an api key to run them.  If you change something, please add a test for the old and new behavior.  I use nose2 for testing.  Please try and be conservative with hitting APIs for testing, no need to waste the resources of the nonprofits whose libraries are being wrapped. (For example, please have your tests pull down one or two items, not thousands.)
 
 **INDIVIDUAL API DOCUMENTATION**
 

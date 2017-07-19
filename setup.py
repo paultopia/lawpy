@@ -24,7 +24,8 @@ setup(name='lawpy',
       packages=['lawpy'],
       install_requires=[
           'requests',
-          'html2text'
+          'html2text',
+          'pandas'
       ],
       python_requires='>=3',
       zip_safe=False)
