@@ -2,6 +2,7 @@ import requests
 import json
 from html2text import html2text
 from .utils import session_builder, get_chain, pretty_dict, safe_merge
+from pandas import DataFrame
 
 class Caselist(object):
     def __init__(self, list_of_cases):
@@ -9,6 +10,9 @@ class Caselist(object):
 
     def __len__(self):
         return len(self.cases)
+
+    def __getitem__(self, item):
+        return Caselist(self.cases.__getitem__(item))
 
     def add(self, request):
         self.cases = self.cases + request.cases
@@ -27,6 +31,13 @@ class Caselist(object):
 
     def __str__(self):
         return json.dumps(self.gather(), sort_keys=True, indent=4)
+
+    def to_pandas(self):
+        flatlist = []
+        for case in self.cases:
+            flatlist += case.flatten()
+        return DataFrame(flatlist)
+
 
 
 
@@ -71,13 +82,30 @@ class Case(object):
     def __repr__(self):
         return "<lawpy Case, " + self.name + ">"
 
+    def basicdict(self):
+        return {key: val for key, val in self.__dict__.items() if key != "opinions"}
+
     def gather(self):
-        gathered = {key: val for key, val in self.__dict__.items() if key != "opinions"}
+        gathered = self.basicdict()
         gathered.update({"opinions": [x.__dict__ for x in self.opinions]})
         return gathered
 
     def __str__(self):
         return json.dumps(self.gather(), sort_keys=True, indent=4)
+
+    def flatten(self):
+        if self.opinion_shape:
+            oprows = []
+            for op in self.opinions:
+                d = self.basicdict()
+                d.pop("opinion_shape", None)
+                oprows.append(safe_merge(d, op.__dict__))
+            return oprows
+        d = self.basicdict()
+        d.pop("opinion_shape", None)
+        return [d]
+
+
 
 
 class courtlistener(object):
