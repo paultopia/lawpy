@@ -52,7 +52,7 @@ class Opinion(object):
         self.case_name = name
         self.html = get_chain(api_data, ["html", "html_columbia", "html_lawbox", "html_with_citations"])
         self.text = api_data.get("plain_text")
-        self.citing = safe_eager_map(lambda x: disassemble(x)["identifier"], api_data.get("opinions_cited"))
+        self.citing_cases = safe_eager_map(lambda x: disassemble(x)["identifier"], api_data.get("opinions_cited"))
         if self.html:
             self.markdown=html2text(self.html)
         else:
@@ -65,7 +65,7 @@ class Opinion(object):
         return pretty_dict(self.__dict__)
 
     def citing(self):
-        return set(self.citing)
+        return set(self.citing_cases)
 
 class Case(object):
     def __init__(self, api_data):
@@ -170,13 +170,20 @@ class courtlistener(object):
     def fetch_cases_by_id(self, id):
         return self.search({"type": "o", "q": "id:{}".format(id)})
 
-    # def fetch_cases_cited_by(c, depth=1): # can take an Opinion, Case, or Caselist object.
-    #     cases = []
-    #     tofetch = c.citing().copy()
-    #     newtofetch = set()
-    #     fetched = set()
-    #     while depth > 0:
-            # depth -= 1
+    def fetch_cases_cited_by(self, c, depth=1): # can take an Opinion, Case, or Caselist object.
+        cases = Caselist([])
+        tofetch = frozenset(c.citing())
+        newtofetch = set()
+        fetched = set()
+        while depth > 0:
+            for c in tofetch:
+                thesecases = self.fetch_cases_by_id(c)
+                cases.add(thesecases)
+                newtofetch.update(thesecases.citing())
+                fetched.add(c)
+            tofetch = frozenset(newtofetch.difference(fetched))
+            depth -= 1
+        return cases
 
 
 # need to add more data in case and opinion objects.  also for stuff that might return either a singleton or a list I should just have getter functions that either map over the list or just dispatch for a single, so that it's easy to get results and reports.
