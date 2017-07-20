@@ -167,11 +167,16 @@ class courtlistener(object):
     def fetch_cases_by_judge(self, judge):
         return self.search({'judge': judge})
 
+    def fetch_cases_by_id(self, id):
+        return self.search({"type": "o", "q": "id:{}".format(id)})
+
     # def fetch_cases_cited_by(c, depth=1): # can take an Opinion, Case, or Caselist object.
     #     cases = []
     #     tofetch = c.citing().copy()
+    #     newtofetch = set()
+    #     fetched = set()
     #     while depth > 0:
-    #         depth -= 1
+            # depth -= 1
 
 
 # need to add more data in case and opinion objects.  also for stuff that might return either a singleton or a list I should just have getter functions that either map over the list or just dispatch for a single, so that it's easy to get results and reports.
