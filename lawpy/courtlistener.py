@@ -3,6 +3,33 @@ import json
 from html2text import html2text
 from .utils import session_builder, get_chain, pretty_dict, safe_merge
 
+class Caselist(object):
+    def __init__(self, list_of_cases):
+        self.cases = list_of_cases
+
+    def __len__(self):
+        return len(self.cases)
+
+    def add(self, request):
+        self.cases = self.cases + request.cases
+
+    def __add__(self, other):
+        return Caselist(self.cases + other.cases)
+
+    def __radd__(self, other):
+        return Caselist.__add__(self, other)
+
+    def gather(self):
+        return [x.gather() for x in self.cases]
+
+    def __repr__(self):
+        return "<lawpy Caselist>"
+
+    def __str__(self):
+        return json.dumps(self.gather(), sort_keys=True, indent=4)
+
+
+
 class Opinion(object):
     def __init__(self, api_data, name):
         self.case_name = name
@@ -44,11 +71,13 @@ class Case(object):
     def __repr__(self):
         return "<lawpy Case, " + self.name + ">"
 
-    def __str__(self):
-        basics = {key: val for key, val in self.__dict__.items() if key != "opinions"}
-        basics.update({"opinions": [x.__dict__ for x in self.opinions]})
-        return json.dumps(basics, sort_keys=True, indent=4)
+    def gather(self):
+        gathered = {key: val for key, val in self.__dict__.items() if key != "opinions"}
+        gathered.update({"opinions": [x.__dict__ for x in self.opinions]})
+        return gathered
 
+    def __str__(self):
+        return json.dumps(self.gather(), sort_keys=True, indent=4)
 
 
 class courtlistener(object):
@@ -79,7 +108,7 @@ class courtlistener(object):
                 opinion_results.append(self.request(op))
             bigdict = safe_merge(bigdict, {"opinions": opinion_results})
             cases.append(bigdict)
-        return [Case(x) for x in cases]
+        return Caselist([Case(x) for x in cases])
 
     def search(self, search_header, noisy=False):
         current = self.request("search/", parameters=search_header)
