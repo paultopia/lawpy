@@ -23,6 +23,11 @@ def safe_merge(d1, d2):
             result.update({k: None})
     return result
 
+def safe_eager_map(func, l):
+    if l:
+        return list(map(func, l))
+    return []
+
 def request_builder(auth_header, baseurl, baseparams, apikey_in_params):
     def request(endpoint="", headers={}, parameters=baseparams):
         if endpoint.startswith("https://"):

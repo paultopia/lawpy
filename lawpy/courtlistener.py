@@ -1,8 +1,12 @@
 import requests
 import json
 from html2text import html2text
-from .utils import session_builder, get_chain, pretty_dict, safe_merge
+from lawpy.utils import session_builder, get_chain, pretty_dict, safe_merge, safe_eager_map
 from pandas import DataFrame
+
+def disassemble(resource_url):
+    chunks = resource_url.split("/")
+    return {"endpoint": chunks[-3], "identifier": chunks[-2]}
 
 class Caselist(object):
     def __init__(self, list_of_cases):
@@ -12,7 +16,9 @@ class Caselist(object):
         return len(self.cases)
 
     def __getitem__(self, item):
-        return Caselist(self.cases.__getitem__(item))
+        if type(item) is slice:
+            return Caselist(self.cases.__getitem__(item))
+        return self.cases[item]
 
     def add(self, request):
         self.cases = self.cases + request.cases
@@ -26,6 +32,9 @@ class Caselist(object):
     def gather(self):
         return [x.gather() for x in self.cases]
 
+    def citing(self):
+        return set([]).union(*[x.citing() for x in self.cases])
+
     def __repr__(self):
         return "<lawpy Caselist>"
 
@@ -38,14 +47,12 @@ class Caselist(object):
             flatlist += case.flatten()
         return DataFrame(flatlist)
 
-
-
-
 class Opinion(object):
     def __init__(self, api_data, name):
         self.case_name = name
         self.html = get_chain(api_data, ["html", "html_columbia", "html_lawbox", "html_with_citations"])
         self.text = api_data.get("plain_text")
+        self.citing = safe_eager_map(lambda x: disassemble(x)["identifier"], api_data.get("opinions_cited"))
         if self.html:
             self.markdown=html2text(self.html)
         else:
@@ -55,8 +62,10 @@ class Opinion(object):
         return "<lawpy Opinion (poss. one of several), " + self.case_name + ">"
 
     def __str__(self):
-        return json.dumps(self.__dict__, sort_keys=True, indent=4)
+        return pretty_dict(self.__dict__)
 
+    def citing(self):
+        return set(self.citing)
 
 class Case(object):
     def __init__(self, api_data):
@@ -91,7 +100,7 @@ class Case(object):
         return gathered
 
     def __str__(self):
-        return json.dumps(self.gather(), sort_keys=True, indent=4)
+        return pretty_dict(self.gather())
 
     def flatten(self):
         if self.opinion_shape:
@@ -105,7 +114,8 @@ class Case(object):
         d.pop("opinion_shape", None)
         return [d]
 
-
+    def citing(self):
+        return set([]).union(*[x.citing() for x in self.opinions])
 
 
 class courtlistener(object):
@@ -157,8 +167,17 @@ class courtlistener(object):
     def fetch_cases_by_judge(self, judge):
         return self.search({'judge': judge})
 
+    # def fetch_cases_cited_by(c, depth=1): # can take an Opinion, Case, or Caselist object.
+    #     cases = []
+    #     tofetch = c.citing().copy()
+    #     while depth > 0:
+    #         depth -= 1
+
+
 # need to add more data in case and opinion objects.  also for stuff that might return either a singleton or a list I should just have getter functions that either map over the list or just dispatch for a single, so that it's easy to get results and reports.
 
 # need to provide a facility to dump all cases straight to JSON
 
 # also should store search strings for future record-keeping use?
+
+# session can have a method to grab cited and such, and pass it either a case or a caselist.  or even a opinion if you really want.  methods on each will return a set.
